@@ -1,12 +1,17 @@
 #include "htmltoprinter.h"
 
 
-HTMLToPrinter::HTMLToPrinter(bool debug, QString printer)
+HTMLToPrinter::HTMLToPrinter(bool debug, QString printer, bool pdf = false)
     : m_page(new QTextDocument())
     , m_debug(debug)
 {
     m_printer = new QPrinter(QPrinter::HighResolution);
-    if (printer != "")
+
+    if (pdf)
+    {
+        m_printer->setOutputFormat(QPrinter::PdfFormat);
+        m_printer->setOutputFileName(printer);
+    } else if (!printer.trimmed().isEmpty())
         m_printer->setPrinterName(printer);
 
     m_printer->setFullPage(true);
@@ -27,7 +32,8 @@ HTMLToPrinter::~HTMLToPrinter()
     delete m_page;
 }
 
-bool HTMLToPrinter::loadFile(QString path, QString & data) {
+bool HTMLToPrinter::loadFile(QString path, QString & data)
+{
     QFile file(path);
 
     if(!file.open(QIODevice::ReadOnly)) {
@@ -45,7 +51,8 @@ bool HTMLToPrinter::loadFile(QString path, QString & data) {
     return true;
 }
 
-bool HTMLToPrinter::loadHTML(QString path) {
+bool HTMLToPrinter::loadHTML(QString path)
+{
     QString text;
     if (!loadFile(path, text))
         return false;
@@ -58,7 +65,8 @@ bool HTMLToPrinter::loadHTML(QString path) {
     return true;
 }
 
-bool HTMLToPrinter::loadCSS(QString path) {
+bool HTMLToPrinter::loadCSS(QString path)
+{
     QString text;
     if (!loadFile(path, text))
         return false;
@@ -71,12 +79,14 @@ bool HTMLToPrinter::loadCSS(QString path) {
     return true;
 }
 
-void HTMLToPrinter::print() {
+void HTMLToPrinter::print()
+{
     QTextStream(stdout) << "Sending file to printer " << QPrinterInfo(*m_printer).printerName() << "\n";
     m_page->print(m_printer);
     QTextStream(stdout) << "File sent\n";
 }
 
-QTextDocument * HTMLToPrinter::getDocument() const {
+QTextDocument * HTMLToPrinter::getDocument() const
+{
     return m_page;
 }

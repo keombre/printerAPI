@@ -4,7 +4,8 @@
 #include <QApplication>
 #include <QCommandLineParser>
 
-bool checkPrinterStatus(QString printerName) {
+bool checkPrinterStatus(QString printerName)
+{
     QPrinter printer(QPrinter::HighResolution);
     printer.setPrinterName(printerName);
     auto state = QPrinterInfo(printer).state();
@@ -15,13 +16,26 @@ bool checkPrinterStatus(QString printerName) {
     return false;
 }
 
-bool htmlPrint(bool debug, QString printerName, bool preview, QString HTML, QString CSS = "") {
+bool htmlPrint(bool debug, QString printerName, bool preview, bool pdf, QString HTML, QString CSS = "")
+{
+    if (printerName.trimmed().isEmpty())
+    {
+        if (pdf)
+        {
+            QTextStream(stdout) << "Missing target file name\n";
+            return false;
+        }
+        else
+            printerName = QPrinterInfo::defaultPrinterName();
+    }
+
     if (!checkPrinterStatus(printerName))
         return false;
 
-    HTMLToPrinter htp(debug, printerName);
+    HTMLToPrinter htp(debug, printerName, pdf);
 
-    if (CSS != "") {
+    if (CSS != "")
+    {
         QTextStream(stdout) << "Loading CSS " << CSS << "\n";
         if (!htp.loadCSS(CSS))
             return false;
@@ -44,11 +58,14 @@ bool htmlPrint(bool debug, QString printerName, bool preview, QString HTML, QStr
     return true;
 }
 
-bool rawPrint(bool debug, QString pn, QString path) {
+bool rawPrint(bool debug, QString pn, QString path)
+{
 
     QString printerName = "";
-    for (const auto & avaPr : QPrinterInfo::availablePrinters()) {
-        if (avaPr.printerName() == pn) {
+    for (const auto & avaPr : QPrinterInfo::availablePrinters())
+    {
+        if (avaPr.printerName() == pn)
+        {
             printerName = pn;
             break;
         }
@@ -62,10 +79,12 @@ bool rawPrint(bool debug, QString pn, QString path) {
     return loadRaw(debug, path, printerName);
 }
 
-void PrintPrinterList() {
+void PrintPrinterList()
+{
     const QString states[] = {"Idle", "Active", "Aborted", "Error"};
     QTextStream(stdout) << "Default: '" << QPrinterInfo::defaultPrinterName() << "'\n";
-    for (const auto & printer : QPrinterInfo::availablePrinters()) {
+    for (const auto & printer : QPrinterInfo::availablePrinters())
+    {
         QTextStream(stdout) << printer.printerName() << ": " << states[printer.state()] << "\n";
     }
 }
@@ -89,7 +108,7 @@ int main(int argc, char *argv[])
     parser.addOption(listPrinters);
 
     QCommandLineOption printType(QStringList() << "t" << "type",
-                QCoreApplication::translate("main", "Print type.\n  RAW: print file in raw format.\n  HTML: (implicit) format HTML and print visual"),
+                QCoreApplication::translate("main", "Print type.\n  RAW: print file in raw format.\n  HTML: (implicit) format HTML and print visual\n  PDF: save to pdf (requires -p to specify file location)"),
                 QCoreApplication::translate("main", "type"));
     parser.addOption(printType);
 
@@ -118,7 +137,8 @@ int main(int argc, char *argv[])
 
     // ---------------------------------
 
-    if (parser.isSet(listPrinters)) {
+    if (parser.isSet(listPrinters))
+    {
         PrintPrinterList();
         app.quit();
         return 0;
@@ -128,15 +148,23 @@ int main(int argc, char *argv[])
     if (requiredArguments.size() < 1)
         parser.showHelp(1);
 
-    if (parser.value(printType) == "RAW") {
-        if (!rawPrint(parser.isSet(debug), parser.value(printerName), requiredArguments.at(0))) {
+    bool pdf = false;
+
+    if (parser.value(printType) == "RAW")
+    {
+        if (!rawPrint(parser.isSet(debug), parser.value(printerName), requiredArguments.at(0)))
+        {
             app.quit();
             return 1;
-        } else {
+        }
+        else
+        {
             app.quit();
             return 0;
         }
     }
+    else if (parser.value(printType) == "PDF")
+        pdf = true;
 
     bool printed = false;
     if (requiredArguments.size() == 2)
@@ -144,6 +172,7 @@ int main(int argc, char *argv[])
                     parser.isSet(debug),
                     parser.value(printerName),
                     parser.isSet(preview),
+                    pdf,
                     requiredArguments.at(0),
                     requiredArguments.at(1));
     else
@@ -151,14 +180,18 @@ int main(int argc, char *argv[])
                     parser.isSet(debug),
                     parser.value(printerName),
                     parser.isSet(preview),
+                    pdf,
                     requiredArguments.at(0));
 
-    if (!printed) {
+    if (!printed)
+    {
         app.quit();
         return 1;
-    } else if (parser.isSet(preview))
+    }
+    else if (parser.isSet(preview))
         return app.exec();
-    else {
+    else
+    {
         app.quit();
         return 0;
     }

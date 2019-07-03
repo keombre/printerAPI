@@ -19,7 +19,7 @@ class HTMLToPrinter : public QObject
 {
     Q_OBJECT
 public:
-    explicit HTMLToPrinter(bool, QString);
+    explicit HTMLToPrinter(bool, QString, bool);
     ~HTMLToPrinter();
 
     bool loadHTML(QString);

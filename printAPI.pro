@@ -1,6 +1,8 @@
 # QT += gui
 QT += webenginewidgets
-CONFIG += static console
+CONFIG += console
+
+QT += printsupport
 
 # CONFIG += c++11 console
 CONFIG += app_bundle
