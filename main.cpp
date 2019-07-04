@@ -16,7 +16,7 @@ bool checkPrinterStatus(QString printerName)
     return false;
 }
 
-bool htmlPrint(bool debug, QString printerName, bool preview, bool pdf, QString HTML, QString CSS = "")
+bool htmlPrint(bool debug, QString printerName, bool preview, QString margin, bool pdf, QString HTML, QString CSS = "")
 {
     if (printerName.trimmed().isEmpty())
     {
@@ -32,7 +32,7 @@ bool htmlPrint(bool debug, QString printerName, bool preview, bool pdf, QString 
     if (!checkPrinterStatus(printerName))
         return false;
 
-    HTMLToPrinter htp(debug, printerName, pdf);
+    HTMLToPrinter htp(debug, printerName, pdf, margin);
 
     if (CSS != "")
     {
@@ -112,6 +112,11 @@ int main(int argc, char *argv[])
                 QCoreApplication::translate("main", "type"));
     parser.addOption(printType);
 
+    QCommandLineOption margin(QStringList() << "m" << "margin",
+                QCoreApplication::translate("main", "Page margin\n  blank: 0 margin\n  default: default printer margin\n  [t],[r],[b],[l]: individual margins (from paper edge)"),
+                QCoreApplication::translate("main", "margin"));
+    parser.addOption(margin);
+
     QCommandLineOption debug(QStringList() << "d" << "debug",
             QCoreApplication::translate("main", "Be as verbose as possible."));
     parser.addOption(debug);
@@ -150,7 +155,7 @@ int main(int argc, char *argv[])
 
     bool pdf = false;
 
-    if (parser.value(printType) == "RAW")
+    if (parser.value(printType).toLower() == "raw")
     {
         if (!rawPrint(parser.isSet(debug), parser.value(printerName), requiredArguments.at(0)))
         {
@@ -163,7 +168,7 @@ int main(int argc, char *argv[])
             return 0;
         }
     }
-    else if (parser.value(printType) == "PDF")
+    else if (parser.value(printType).toLower() == "pdf")
         pdf = true;
 
     bool printed = false;
@@ -172,6 +177,7 @@ int main(int argc, char *argv[])
                     parser.isSet(debug),
                     parser.value(printerName),
                     parser.isSet(preview),
+                    parser.value(margin),
                     pdf,
                     requiredArguments.at(0),
                     requiredArguments.at(1));
@@ -180,6 +186,7 @@ int main(int argc, char *argv[])
                     parser.isSet(debug),
                     parser.value(printerName),
                     parser.isSet(preview),
+                    parser.value(margin),
                     pdf,
                     requiredArguments.at(0));
 

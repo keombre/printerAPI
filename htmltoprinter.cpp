@@ -1,7 +1,7 @@
 #include "htmltoprinter.h"
 
 
-HTMLToPrinter::HTMLToPrinter(bool debug, QString printer, bool pdf = false)
+HTMLToPrinter::HTMLToPrinter(bool debug, QString printer, bool pdf, QString margin)
     : m_page(new QTextDocument())
     , m_debug(debug)
 {
@@ -14,22 +14,51 @@ HTMLToPrinter::HTMLToPrinter(bool debug, QString printer, bool pdf = false)
     } else if (!printer.trimmed().isEmpty())
         m_printer->setPrinterName(printer);
 
-    m_printer->setFullPage(true);
-    m_printer->setPageMargins(QMarginsF(0, 0, 0, 0));
     m_printer->setPageSize(QPageSize(QPageSize::A4));
+    if (margin.toLower() != "default")
+    {
+        QMarginsF margins = parseMargin(margin);
+        m_printer->setFullPage(true);
+        m_printer->setPageMargins(margins, QPageLayout::Point);
+        m_page->setDocumentMargin(0);
+    }
 
     m_page->setPageSize(m_printer->paperSize(QPrinter::Point));
-    m_page->setDocumentMargin(0);
 
     if (m_debug)
         QTextStream(stdout) << "Document margin: " << m_page->documentMargin() << "\n"
-                            << "Page size: " << m_printer->width() << ":" << m_printer->height() << "\n";
+                            << "Page size: " << m_printer->pageRect().width() << ":" << m_printer->pageRect().height() << "\n";
 }
 
 HTMLToPrinter::~HTMLToPrinter()
 {
     delete m_printer;
     delete m_page;
+}
+
+QMarginsF HTMLToPrinter::parseMargin(QString margin) const
+{
+    if (margin.trimmed().isEmpty())
+        return QMarginsF(0, 0, 0, 0);
+    else
+    {
+        QStringList list = margin.split(",", QString::SkipEmptyParts);
+        if (list.length() != 4)
+            return QMarginsF(0, 0, 0, 0);
+        else
+        {
+            QList<unsigned int> r;
+            for (int i = 0; i < 4; i++)
+            {
+                bool converted;
+                unsigned int n = list[i].toUInt(&converted);
+                if (!converted)
+                    return QMarginsF(0, 0, 0, 0);
+                r[i] = n;
+            }
+            return QMarginsF(r[3], r[0], r[1], r[2]);
+        }
+    }
 }
 
 bool HTMLToPrinter::loadFile(QString path, QString & data)

@@ -19,13 +19,14 @@ class HTMLToPrinter : public QObject
 {
     Q_OBJECT
 public:
-    explicit HTMLToPrinter(bool, QString, bool);
+    explicit HTMLToPrinter(bool, QString, bool, QString);
     ~HTMLToPrinter();
 
     bool loadHTML(QString);
     bool loadCSS(QString);
     void print();
     QTextDocument * getDocument() const;
+    QMarginsF parseMargin(QString margin) const;
 
 private:
     QTextDocument * m_page;
